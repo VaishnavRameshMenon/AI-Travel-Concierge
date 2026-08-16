@@ -100,6 +100,8 @@ Search Tool   Travel API Tool   Other Tools
                   |
                   v
            Final Travel Plan
+```
+
 
 The architecture is a preliminary design and will be refined as development
 progresses.
@@ -180,6 +182,7 @@ AI-Travel-Concierge/
 ├── .gitignore
 ├── requirements.txt
 └── README.md
+```
 
 The repository structure will be updated as development progresses.
 
@@ -218,6 +221,5 @@ this repository.
 2. Jyoshita NH
 3. Ninad Gowda
 4. Parinitha Srinivas
-                  |
                   v
               SQLite DB
