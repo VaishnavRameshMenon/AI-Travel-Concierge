@@ -221,5 +221,3 @@ this repository.
 2. Jyoshita NH
 3. Ninad Gowda
 4. Parinitha Srinivas
-                  v
-              SQLite DB
