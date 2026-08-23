@@ -198,14 +198,19 @@ for local development and deployment.
 
 ## Current Status
 
-**Week 1: Planning and Initial Setup**
+**Week 2: Initial Development**
 
-The team has finalized the AI Travel Concierge topic and discussed the
-project objectives, proposed features, architecture, technology stack and
-division of responsibilities.
+The team has completed the initial project setup and started development.
 
-The GitHub repository and project board have been created. Development and API
-research will begin in the next phase.
+The GitHub repository, project board and branch-based development workflow have been set up. The Python development environment and required dependencies have been configured.
+
+Gemini API integration has been set up using environment variables and secure API key handling.
+
+The initial travel agent foundation has been implemented using LangChain and Gemini. The agent currently accepts a travel-related user query and generates a travel planning response based on the provided requirements.
+
+The team has also researched suitable external APIs and tools for travel-related features. Integration of these tools will be carried out in the next development phase.
+
+The next phase will focus on integrating external tools and APIs, developing the Streamlit interface, and improving the agent's ability to use external information when answering travel queries.
 
 ## Submission Plan
 
