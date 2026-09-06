@@ -3,3 +3,13 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.DS_Store
+*.pdf
+temp.pdf
+.streamlit/
+.pytest_cache/
