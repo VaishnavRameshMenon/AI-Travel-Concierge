@@ -1,4 +1,23 @@
-# TripPilot
+# TripPilot — AI Travel Concierge
+
+TripPilot is a FastAPI and LangGraph travel-planning application with a Streamlit demo interface. It extracts requirements from a natural-language request, performs optional weather/attraction/flight/hotel research, generates and validates an itinerary, and stores completed plans in PostgreSQL.
+
+## Run locally
+
+1. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` and a PostgreSQL `DATABASE_URL`. Optional provider keys enable live attraction and flight research.
+2. Start the API: `uvicorn backend.app.main:app --reload`.
+3. Start the UI in another terminal: `streamlit run app.py`.
+
+The UI sends JSON requests to `POST /trips/generate`; configure `BACKEND_URL` when it is not `http://localhost:8000`.
+
+## API
+
+- `GET /health` — service/database configuration state
+- `GET /metrics` — process-local request and generation metrics
+- `POST /trips/generate` — validated `{ "user_query": "..." }` payload
+- `GET /trips` and `GET /trips/{id}` — persisted history
+
+Weather uses Open-Meteo. Attractions use OpenTripMap with labelled curated fallbacks. Flight data uses Aviationstack when configured; hotel options are currently clearly labelled fallback estimates. No provider result is a booking, availability guarantee, or price guarantee.
 
 # AI Travel Concierge - Team AGENTIC FOUR
 

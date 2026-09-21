@@ -13,3 +13,10 @@ __pycache__/
 temp.pdf
 .streamlit/
 .pytest_cache/
+
+# Frontend generated/dependency files
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env.*
+!frontend/.env.example

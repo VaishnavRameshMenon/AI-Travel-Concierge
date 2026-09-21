@@ -1,4 +1,5 @@
-from typing import TypedDict, Optional, List, Dict, Any
+import operator
+from typing import Annotated, TypedDict, Optional, List, Dict, Any
 
 
 class TravelState(TypedDict, total=False):
@@ -31,6 +32,8 @@ class TravelState(TypedDict, total=False):
     attraction_data: List[Dict[str, Any]]
     weather_data: Dict[str, Any]
     search_data: List[Dict[str, Any]]
+    # Several research nodes run concurrently; combine their warnings safely.
+    tool_warnings: Annotated[List[str], operator.add]
 
     # Generated itinerary
     itinerary: Optional[Dict[str, Any]]

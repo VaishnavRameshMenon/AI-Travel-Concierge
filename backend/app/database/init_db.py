@@ -3,8 +3,9 @@ from backend.app.database.models import Trip
 
 
 def init_db():
+    if engine is None:
+        raise RuntimeError("DATABASE_URL is not configured.")
     Base.metadata.create_all(bind=engine)
-    print("Database tables created successfully.")
 
 
 if __name__ == "__main__":

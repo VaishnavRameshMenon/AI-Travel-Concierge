@@ -8,13 +8,12 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is not configured in .env")
-
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=300,
+# Keep imports and health checks available when PostgreSQL is temporarily
+# unavailable. Database-dependent endpoints report a clear service error.
+engine = (
+    create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
+    if DATABASE_URL
+    else None
 )
 
 SessionLocal = sessionmaker(
@@ -24,3 +23,7 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+
+
+def is_database_configured() -> bool:
+    return engine is not None

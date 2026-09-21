@@ -1,24 +1,53 @@
 import time
 import uuid
+import os
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from backend.app.api.schemas import (
+    HealthResponse,
+    TripGenerationRequest,
+    TripGenerationResponse,
+    TripListResponse,
+)
 from backend.app.agent.graph import travel_graph
 from backend.app.database.crud import get_all_trips, get_trip, save_trip
-from backend.app.database.database import SessionLocal
+from backend.app.database.database import SessionLocal, is_database_configured
 from backend.app.database.init_db import init_db
 from backend.app.monitoring.logger import configure_logging, logger
 from backend.app.monitoring.metrics import metrics
 
 
-configure_logging()
+# ============================================================
+# APPLICATION
+# ============================================================
 
+configure_logging()
 
 app = FastAPI(
     title="TripPilot API",
     description="Backend API for the TripPilot AI Travel Concierge",
     version="1.0.0",
+)
+
+
+# ============================================================
+# CORS
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8501",
+        "http://127.0.0.1:8501",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -29,11 +58,23 @@ app = FastAPI(
 @app.on_event("startup")
 def startup():
     logger.info("application_startup")
-    init_db()
-    logger.info("database_initialized")
+
+    if not is_database_configured():
+        logger.warning("database_not_configured")
+        return
+
+    try:
+        init_db()
+        logger.info("database_initialized")
+    except Exception:
+        logger.exception("database_initialization_failed")
 
 
 def get_db():
+    if not is_database_configured():
+        yield None
+        return
+
     db = SessionLocal()
 
     try:
@@ -107,10 +148,11 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 def health_check():
     return {
-        "status": "healthy",
+        "status": "healthy" if is_database_configured() else "degraded",
+        "database_configured": is_database_configured(),
     }
 
 
@@ -127,22 +169,26 @@ def get_metrics():
 # GENERATE TRIP
 # ============================================================
 
-@app.post("/trips/generate")
+@app.post(
+    "/trips/generate",
+    response_model=TripGenerationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def generate_trip(
-    user_query: str,
-    db: Session = Depends(get_db),
+    request: TripGenerationRequest,
+    db: Session | None = Depends(get_db),
 ):
     start_time = time.perf_counter()
 
     logger.info(
         "trip_generation_started",
-        user_query=user_query,
+        query_length=len(request.user_query),
     )
 
     try:
         result = await travel_graph.ainvoke(
             {
-                "user_query": user_query,
+                "user_query": request.user_query,
             }
         )
 
@@ -165,7 +211,24 @@ async def generate_trip(
                 detail=result["error"],
             )
 
-        trip = save_trip(db, result)
+        trip = None
+        persistence_warning = None
+
+        if db is not None:
+            try:
+                trip = save_trip(db, result)
+            except Exception:
+                db.rollback()
+
+                persistence_warning = (
+                    "Trip plan generated, but could not be saved to the database."
+                )
+
+                logger.exception("trip_persistence_failed")
+        else:
+            persistence_warning = (
+                "Trip plan generated, but the database is not configured."
+            )
 
         metrics.record_generation(
             duration=duration,
@@ -174,7 +237,7 @@ async def generate_trip(
 
         logger.info(
             "trip_generation_completed",
-            trip_id=trip.id,
+            trip_id=trip.id if trip else None,
             destination=result.get("destination"),
             duration_seconds=round(duration, 3),
             estimated_cost=result.get("estimated_cost"),
@@ -182,22 +245,28 @@ async def generate_trip(
 
         return {
             "success": True,
-            "trip_id": trip.id,
+            "persisted": trip is not None,
+            "trip_id": trip.id if trip else None,
             "destination": result.get("destination"),
-            "trip_duration_days": result.get(
-                "trip_duration_days"
-            ),
+            "start_date": result.get("start_date"),
+            "end_date": result.get("end_date"),
+            "trip_duration_days": result.get("trip_duration_days"),
             "travelers": result.get("travelers"),
             "budget": result.get("budget"),
             "interests": result.get("interests"),
             "itinerary": result.get("itinerary"),
-            "estimated_cost": result.get(
-                "estimated_cost"
-            ),
+            "estimated_cost": result.get("estimated_cost"),
+            "weather_data": result.get("weather_data", {}),
+            "attraction_data": result.get("attraction_data", []),
+            "flight_data": result.get("flight_data", []),
+            "hotel_data": result.get("hotel_data", []),
+            "tool_warnings": result.get("tool_warnings", [])
+            + ([persistence_warning] if persistence_warning else []),
             "constraint_violations": result.get(
                 "constraint_violations",
                 [],
             ),
+            "final_response": result.get("final_response"),
         }
 
     except HTTPException:
@@ -230,8 +299,14 @@ async def generate_trip(
 @app.get("/trips/{trip_id}")
 def fetch_trip(
     trip_id: int,
-    db: Session = Depends(get_db),
+    db: Session | None = Depends(get_db),
 ):
+    if db is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Database is not configured.",
+        )
+
     logger.info(
         "trip_fetch_started",
         trip_id=trip_id,
@@ -270,10 +345,16 @@ def fetch_trip(
 # GET ALL TRIPS
 # ============================================================
 
-@app.get("/trips")
+@app.get("/trips", response_model=TripListResponse)
 def fetch_trips(
-    db: Session = Depends(get_db),
+    db: Session | None = Depends(get_db),
 ):
+    if db is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Database is not configured.",
+        )
+
     trips = get_all_trips(db)
 
     logger.info(

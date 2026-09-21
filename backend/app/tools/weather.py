@@ -1,10 +1,15 @@
+from datetime import date
 import httpx
 
 
-async def get_weather(latitude: float, longitude: float):
+async def get_weather(latitude: float, longitude: float, start_date: str | None = None, end_date: str | None = None):
     """
     Get current weather and a short forecast from Open-Meteo.
     """
+
+    trip_start = date.fromisoformat(start_date) if start_date else None
+    if trip_start and not 0 <= (trip_start - date.today()).days <= 6:
+        return {"trip_date_forecast_available": False, "requested_trip_start": start_date, "requested_trip_end": end_date, "warning": "Trip dates are outside the available short forecast range; current conditions are not trip-date weather."}
 
     url = "https://api.open-meteo.com/v1/forecast"
 
@@ -22,7 +27,7 @@ async def get_weather(latitude: float, longitude: float):
             response = await client.get(url, params=params)
             response.raise_for_status()
 
-            return response.json()
+            return {"trip_date_forecast_available": True, "requested_trip_start": start_date, "requested_trip_end": end_date, "forecast_data": response.json()}
 
     except httpx.HTTPError as e:
         return {
