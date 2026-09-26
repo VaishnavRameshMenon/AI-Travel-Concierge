@@ -1694,9 +1694,9 @@ export default function Home() {
   {flightCount > 0 ? (
     <div className="flight-list">
       {(trip.flight_data || []).slice(0, 4).map((flight, index) => {
-        const segments = Array.isArray(flight.segments) ? flight.segments : [];
-        const firstSegment = segments[0] || {};
-        const lastSegment = segments[segments.length - 1] || firstSegment;
+        const segments = Array.isArray(flight.segments) ? flight.segments as Record<string, unknown>[] : [];
+        const firstSegment: Record<string, unknown> = segments[0] || {};
+        const lastSegment: Record<string, unknown> = segments[segments.length - 1] || firstSegment;
         const price = typeof flight.price === "number" ? flight.price : null;
         const duration = typeof flight.total_duration_minutes === "number"
           ? flight.total_duration_minutes
@@ -1747,7 +1747,7 @@ export default function Home() {
                 {duration !== null ? `${Math.floor(duration / 60)}h ${duration % 60}m` : "Duration unavailable"}
               </span>
               <span>{String(firstSegment.travel_class || "Economy")}</span>
-              <span>{flight.travelers || trip.travelers || 1} travellers</span>
+              <span>{Number(flight.travelers || trip.travelers || 1)} travellers</span>
             </div>
           </div>
         );
@@ -1806,8 +1806,8 @@ export default function Home() {
                 {reviews !== null ? ` · ${reviews} reviews` : ""}
               </span>
 
-              {hotel.hotel_class && (
-                <span className="hotel-class">{String(hotel.hotel_class)}</span>
+              {typeof hotel.hotel_class === "string" && hotel.hotel_class && (
+                <span className="hotel-class">{hotel.hotel_class}</span>
               )}
 
               {amenities.length > 0 && (

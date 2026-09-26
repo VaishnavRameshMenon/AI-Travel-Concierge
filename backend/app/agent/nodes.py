@@ -1,4 +1,4 @@
-﻿from datetime import date
+from datetime import date
 
 from typing import Optional, List
 
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from backend.app.agent.state import TravelState
 
-from backend.app.agent.llm import llm
+from backend.app.agent.llm import get_resilient_structured_llm, llm
 
 
 
@@ -172,19 +172,9 @@ class Itinerary(BaseModel):
 
 
 
-structured_llm = llm.with_structured_output(
+structured_llm = get_resilient_structured_llm(TripRequirements)
 
-    TripRequirements
-
-)
-
-
-
-itinerary_llm = llm.with_structured_output(
-
-    Itinerary
-
-)
+itinerary_llm = get_resilient_structured_llm(Itinerary)
 
 
 
@@ -585,20 +575,11 @@ async def weather_node(state: TravelState) -> TravelState:
 
 
     if weather_data.get("warning"):
-
-        return {"weather_data": weather_data, "tool_warnings": [weather_data["warning"]]}
-
-
-
-    if weather_data.get("warning"):
-
         return {
-
             "weather_data": weather_data,
-
             "tool_warnings": [weather_data["warning"]],
-
         }
+
 
     return {"weather_data": weather_data}
 
