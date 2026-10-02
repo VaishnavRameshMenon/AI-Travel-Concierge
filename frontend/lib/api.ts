@@ -50,6 +50,8 @@ export type TripDetail = {
   itinerary: Record<string, unknown> | null;
   estimated_cost: number | null;
   weather_data: Record<string, unknown>;
+  tool_warnings: string[];
+  constraint_violations: string[];
   flight_data: Array<Record<string, unknown>>;
   hotel_data: Array<Record<string, unknown>>;
   attraction_data: Array<Record<string, unknown>>;
