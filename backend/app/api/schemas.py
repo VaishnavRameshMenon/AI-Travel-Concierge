@@ -54,6 +54,28 @@ class TripListResponse(BaseModel):
     trips: list[TripSummary]
 
 
+class TripDetailResponse(BaseModel):
+    """Full trip record returned by GET /trips/{trip_id}."""
+
+    id: int
+    user_query: str | None = None
+    origin: str | None = None
+    destination: str
+    start_date: str | None = None
+    end_date: str | None = None
+    trip_duration_days: int | None = None
+    travelers: int | None = None
+    budget: float | None = None
+    interests: list[str] = Field(default_factory=list)
+    itinerary: dict[str, Any] | None = None
+    estimated_cost: float | None = None
+    weather_data: dict[str, Any] = Field(default_factory=dict)
+    flight_data: list[dict[str, Any]] = Field(default_factory=list)
+    hotel_data: list[dict[str, Any]] = Field(default_factory=list)
+    attraction_data: list[dict[str, Any]] = Field(default_factory=list)
+    created_at: datetime
+
+
 class HealthResponse(BaseModel):
     status: str
     database_configured: bool

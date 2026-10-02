@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.schemas import (
     HealthResponse,
+    TripDetailResponse,
     TripGenerationRequest,
     TripGenerationResponse,
     TripListResponse,
@@ -296,7 +297,7 @@ async def generate_trip(
 # GET ONE TRIP
 # ============================================================
 
-@app.get("/trips/{trip_id}")
+@app.get("/trips/{trip_id}", response_model=TripDetailResponse)
 def fetch_trip(
     trip_id: int,
     db: Session | None = Depends(get_db),
@@ -327,16 +328,21 @@ def fetch_trip(
 
     return {
         "id": trip.id,
+        "user_query": trip.user_query,
+        "origin": trip.origin,
         "destination": trip.destination,
         "start_date": trip.start_date,
         "end_date": trip.end_date,
         "trip_duration_days": trip.trip_duration_days,
         "travelers": trip.travelers,
         "budget": trip.budget,
-        "interests": trip.interests,
+        "interests": trip.interests or [],
         "itinerary": trip.itinerary,
         "estimated_cost": trip.estimated_cost,
-        "weather_data": trip.weather_data,
+        "weather_data": trip.weather_data or {},
+        "flight_data": trip.flight_data or [],
+        "hotel_data": trip.hotel_data or [],
+        "attraction_data": trip.attraction_data or [],
         "created_at": trip.created_at,
     }
 

@@ -16,6 +16,18 @@ class Trip(Base):
         index=True,
     )
 
+    # ── original request ──────────────────────────────────────
+    user_query: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    # ── parsed trip parameters ────────────────────────────────
+    origin: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     destination: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
@@ -51,6 +63,7 @@ class Trip(Base):
         nullable=True,
     )
 
+    # ── AI-generated outputs ──────────────────────────────────
     itinerary: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
@@ -61,11 +74,28 @@ class Trip(Base):
         nullable=True,
     )
 
+    # ── research data ─────────────────────────────────────────
     weather_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )
 
+    flight_data: Mapped[list | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
+    hotel_data: Mapped[list | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
+    attraction_data: Mapped[list | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
+    # ── metadata ──────────────────────────────────────────────
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
