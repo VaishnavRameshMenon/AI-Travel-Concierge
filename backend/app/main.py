@@ -2,6 +2,22 @@ import time
 import uuid
 import os
 
+from backend.app.api.schemas import (
+    HealthResponse,
+    TripDetailResponse,
+    TripGenerationRequest,
+    TripGenerationResponse,
+    TripListResponse,
+    TripRefinementRequest,
+
+)
+
+from backend.app.database.crud import (
+    get_all_trips,
+    get_trip,
+    save_trip,
+    update_trip,
+)
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -296,6 +312,121 @@ async def generate_trip(
 # ============================================================
 # GET ONE TRIP
 # ============================================================
+@app.post(
+    "/trips/{trip_id}/refine",
+    response_model=TripGenerationResponse,
+)
+async def refine_trip(
+    trip_id: int,
+    request: TripRefinementRequest,
+    db: Session | None = Depends(get_db),
+):
+    if db is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Database is not configured.",
+        )
+
+    trip = get_trip(db, trip_id)
+
+    if not trip:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found.",
+        )
+
+    start_time = time.perf_counter()
+
+    try:
+        result = await travel_graph.ainvoke(
+            {
+                "user_query": trip.user_query or "",
+                "refinement_instruction": request.instruction,
+                "previous_itinerary": trip.itinerary,
+                "origin": trip.origin,
+                "destination": trip.destination,
+                "start_date": trip.start_date,
+                "end_date": trip.end_date,
+                "trip_duration_days": trip.trip_duration_days,
+                "travelers": trip.travelers,
+                "budget": trip.budget,
+                "interests": trip.interests or [],
+                "flight_data": trip.flight_data or [],
+                "hotel_data": trip.hotel_data or [],
+                "attraction_data": trip.attraction_data or [],
+                "weather_data": trip.weather_data or {},
+            }
+        )
+
+        duration = time.perf_counter() - start_time
+
+        if result.get("error"):
+            raise HTTPException(
+                status_code=400,
+                detail=result["error"],
+            )
+
+        updated_trip = update_trip(db, trip, result)
+
+        metrics.record_generation(
+            duration=duration,
+            success=True,
+        )
+
+        logger.info(
+            "trip_refinement_completed",
+            trip_id=updated_trip.id,
+            duration_seconds=round(duration, 3),
+            estimated_cost=result.get("estimated_cost"),
+        )
+
+        return {
+            "success": True,
+            "persisted": True,
+            "trip_id": updated_trip.id,
+            "destination": result.get("destination"),
+            "start_date": result.get("start_date"),
+            "end_date": result.get("end_date"),
+            "trip_duration_days": result.get("trip_duration_days"),
+            "travelers": result.get("travelers"),
+            "budget": result.get("budget"),
+            "interests": result.get("interests", []),
+            "itinerary": result.get("itinerary"),
+            "estimated_cost": result.get("estimated_cost"),
+            "weather_data": result.get("weather_data", {}),
+            "attraction_data": result.get("attraction_data", []),
+            "flight_data": result.get("flight_data", []),
+            "hotel_data": result.get("hotel_data", []),
+            "tool_warnings": result.get("tool_warnings", []),
+            "constraint_violations": result.get(
+                "constraint_violations",
+                [],
+            ),
+            "final_response": result.get("final_response"),
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        duration = time.perf_counter() - start_time
+
+        metrics.record_generation(
+            duration=duration,
+            success=False,
+        )
+
+        logger.exception(
+            "trip_refinement_failed",
+            trip_id=trip_id,
+            duration_seconds=round(duration, 3),
+            error=str(exc),
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Trip refinement failed: {str(exc)}",
+        )
 
 @app.get("/trips/{trip_id}", response_model=TripDetailResponse)
 def fetch_trip(

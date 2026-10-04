@@ -79,3 +79,10 @@ class TripDetailResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     database_configured: bool
+
+class TripRefinementRequest(BaseModel):
+    instruction: str = Field(
+        min_length=3,
+        max_length=2_000,
+        description="Instruction describing how the existing itinerary should be refined.",
+    )

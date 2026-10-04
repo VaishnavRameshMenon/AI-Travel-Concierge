@@ -5,6 +5,8 @@ from typing import Annotated, TypedDict, Optional, List, Dict, Any
 class TravelState(TypedDict, total=False):
     # Original user request
     user_query: str
+    refinement_instruction: Optional[str]
+    previous_itinerary: Optional[Dict[str, Any]]
 
     # Trip requirements
     origin: Optional[str]
