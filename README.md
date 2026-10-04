@@ -1,244 +1,377 @@
-# TripPilot — AI Travel Concierge
+# ✈️ TripPilot — AI Travel Concierge
 
-TripPilot is a FastAPI and LangGraph travel-planning application with a Streamlit demo interface. It extracts requirements from a natural-language request, performs optional weather/attraction/flight/hotel research, generates and validates an itinerary, and stores completed plans in PostgreSQL.
+> An AI-powered travel planning agent that combines LangGraph orchestration, real-world travel APIs, persistent trip storage, constraint validation, and intelligent itinerary replanning.
 
-## Run locally
+## Overview
 
-1. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` and a PostgreSQL `DATABASE_URL`. Optional provider keys enable live attraction and flight research.
-2. Start the API: `uvicorn backend.app.main:app --reload`.
-3. Start the UI in another terminal: `streamlit run app.py`.
+TripPilot is an advanced AI Travel Concierge built as a Track B project for the AI Agent Development program.
 
-The UI sends JSON requests to `POST /trips/generate`; configure `BACKEND_URL` when it is not `http://localhost:8000`.
+The system accepts natural-language travel requests and produces personalized itineraries using a multi-step LangGraph workflow. It researches real-world travel information, combines external API data with LLM reasoning, validates the generated itinerary against user constraints, and can replan when constraints are violated.
 
-## API
+The application provides a professional Next.js interface backed by a FastAPI API and PostgreSQL persistence layer.
 
-- `GET /health` — service/database configuration state
-- `GET /metrics` — process-local request and generation metrics
-- `POST /trips/generate` — validated `{ "user_query": "..." }` payload
-- `GET /trips` and `GET /trips/{id}` — persisted history
+## ✨ Key Features
 
-Weather uses Open-Meteo. Attractions use OpenTripMap with labelled curated fallbacks. Flight data uses Aviationstack when configured; hotel options are currently clearly labelled fallback estimates. No provider result is a booking, availability guarantee, or price guarantee.
+- 🤖 AI-powered travel planning
+- 🧠 LangGraph multi-node agent workflow
+- ✈️ Live flight research
+- 🏨 Hotel research
+- 🌦️ Weather information
+- 📍 Attraction and destination research
+- 💰 Budget-aware itinerary generation
+- 🔄 Constraint validation and automatic replanning
+- 💾 Persistent trip history using PostgreSQL
+- 🔧 External API fallback handling
+- 📊 Application logging and metrics
+- 🛡️ Input validation and secure API-key handling
+- 🧪 Automated test suite
+- 🎨 Professional Next.js frontend
+- 🚀 Docker-ready backend deployment
 
-# AI Travel Concierge - Team AGENTIC FOUR
-
-An AI-powered travel assistant that uses an LLM and external APIs to provide
-personalized travel recommendations and itinerary planning through a web
-interface.
-
-## Team & Roles
-
-| Name | Responsibility |
-|---|---|
-| Vaishnav R Menon | Backend and project integration, GitHub repository and project management, documentation, testing and deployment coordination |
-| Jyoshita NH | API setup and management, development stack configuration, API testing and secure API key handling |
-| Ninad Gowda | Core RAG chatbot, LLM integration and AI/agent development |
-| Parinitha Srinivas | Streamlit UI development and frontend/backend integration |
-
-All team members will contribute to testing, debugging, deployment and final
-project integration.
-
-## Project Overview
-
-We are building a Simple Travel Assistant that can understand travel-related
-queries, retrieve relevant information using external APIs and tools, and
-generate basic personalized itineraries.
-
-The user will be able to provide details such as destination, duration,
-budget, group size and interests. The system will process these requirements
-and provide relevant travel information and an itinerary through a
-conversational interface.
-
-As development progresses, the project will be extended from a basic travel
-assistant into a tool-using AI agent capable of selecting and using external
-tools to complete travel-related tasks.
-
-## Main Objectives
-
-- Understand travel requirements expressed in natural language.
-- Retrieve relevant travel information using external APIs and tools.
-- Generate personalized day-by-day itineraries.
-- Consider constraints such as budget, duration, group size and preferences.
-- Allow users to modify and refine their itinerary through follow-up queries.
-- Provide a simple web interface using Streamlit.
-- Store relevant travel searches using a database.
-- Handle API errors and invalid inputs appropriately.
-
-## Planned Core Features
-
-- Conversational travel assistant
-- Travel information search
-- External API and tool integration
-- Destination recommendations
-- Basic itinerary generation
-- Budget-aware planning
-- User preference and constraint handling
-- Conversational itinerary modification
-- Search history
-- Streamlit web interface
-
-Additional features will be considered after the core functionality is
-working.
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | Streamlit |
-| Backend | Python + LangChain |
-| Database | SQLite |
-| LLM | Gemini or other suitable LLM |
-| APIs | 2 to 3 travel-related APIs/tools |
-| Version Control | Git and GitHub |
-| Deployment | Streamlit Cloud |
-
-The exact APIs and LLM will be finalized after testing their availability,
-limitations and suitability for the project.
-
-## Proposed Architecture
+## 🏗️ Architecture
 
 ```text
-User
- |
- v
-Streamlit Interface
- |
- v
-AI Travel Agent
- |
- +----------------+----------------+
- |                |                |
- v                v                v
-Search Tool   Travel API Tool   Other Tools
- |                |                |
- +----------------+----------------+
-                  |
-                  v
-          Itinerary Generator
-                  |
-                  v
-          Budget and Preference
-               Handling
-                  |
-                  v
-           Final Travel Plan
+┌───────────────────────────────┐
+│       Next.js Frontend        │
+│  Trip Planner / Results / UI  │
+└───────────────┬───────────────┘
+                │ HTTP / REST
+                ▼
+┌───────────────────────────────┐
+│         FastAPI Backend       │
+│  API Validation / Persistence │
+│  Logging / Metrics            │
+└───────────────┬───────────────┘
+                ▼
+┌───────────────────────────────┐
+│       LangGraph Agent         │
+│                               │
+│ Requirements Extraction       │
+│          ↓                    │
+│ Planning / State Management  │
+│          ↓                    │
+│ Research Fan-out             │
+│ Flights / Hotels / Weather   │
+│ Attractions                  │
+│          ↓                    │
+│ Cost Grounding               │
+│          ↓                    │
+│ Itinerary Generation         │
+│          ↓                    │
+│ Constraint Validation        │
+│          ↓                    │
+│ Replanning Loop              │
+└───────────────┬───────────────┘
+                │
+        ┌───────┴────────┐
+        ▼                ▼
+┌──────────────┐  ┌──────────────┐
+│ Travel APIs  │  │ PostgreSQL   │
+│ Flights      │  │ Trips        │
+│ Hotels       │  │ Itineraries  │
+│ Weather      │  │ History      │
+│ Attractions  │  │              │
+└──────────────┘  └──────────────┘
 ```
 
+## 🧠 Agent Workflow
 
-The architecture is a preliminary design and will be refined as development
-progresses.
+1. **Trip Requirements** — extracts origin, destination, dates, duration, travelers, budget, interests, and preferences.
+2. **Planning** — normalizes requirements and resolves dates and duration.
+3. **Research** — determines which external tools are required.
+4. **Geocoding** — resolves destination coordinates and airport information.
+5. **Parallel Research** — gathers weather, flights, hotels, and attractions.
+6. **Cost Grounding** — combines researched travel costs with local expenses.
+7. **Itinerary Generation** — creates the itinerary using researched data and preferences.
+8. **Constraint Validation** — checks duration, travelers, budget, destination, and researched cost constraints.
+9. **Replanning** — revises the itinerary when constraints are violated, with a bounded replanning loop.
+10. **Final Response** — returns the itinerary and supporting research data.
 
-## Development Plan
+## 🔌 External Integrations
 
-### Week 1 to 2: Foundation
+| Integration | Purpose |
+|---|---|
+| Gemini | LLM reasoning and itinerary generation |
+| SerpApi / Google Flights | Flight research |
+| SerpApi / Google Hotels | Hotel research |
+| Open-Meteo | Weather information |
+| OpenTripMap | Attraction research |
+| PostgreSQL / Supabase | Persistent trip storage |
 
-**Goal:** Set up the project and get the first working version running.
+The system includes fallback behavior when selected external providers are unavailable.
 
-- Create and organize the GitHub repository.
-- Set up collaborators and the project board.
-- Set up the Python development environment.
-- Configure LangChain and Streamlit.
-- Research suitable travel APIs and tools.
-- Set up secure API key handling.
-- Build the initial RAG/chatbot foundation.
-- Create the initial Streamlit interface.
-- Test the basic AI interaction.
-- Deploy the initial version if feasible.
+## 🛠️ Technology Stack
 
-**Milestone:** Basic working travel assistant prototype.
+### Frontend
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
 
-### Week 3 to 4: Core Agent Architecture
+### Backend
+- Python
+- FastAPI
+- LangChain
+- LangGraph
+- Pydantic
+- SQLAlchemy
 
-**Goal:** Move from a basic chatbot toward a tool-using AI agent.
+### AI
+- Google Gemini
 
-- Integrate the selected search and travel tools.
-- Implement tool calling with LangChain.
-- Improve the agent's ability to select appropriate tools.
-- Add basic error handling.
-- Test the tools individually.
-- Connect the agent with the Streamlit interface.
-- Test different travel-related queries.
+### Database
+- PostgreSQL
+- Supabase-compatible PostgreSQL connection
 
-**Milestone:** Agent can use external tools to answer travel queries.
+### APIs
+- SerpApi
+- Open-Meteo
+- OpenTripMap
 
-### Week 5 to 6: Travel Specialization
+### Testing
+- Pytest
 
-**Goal:** Add travel-specific functionality.
+### Infrastructure
+- Docker
+- Docker Compose
 
-- Integrate the selected travel API or APIs.
-- Add SQLite database functionality.
-- Implement basic itinerary generation.
-- Add budget and preference handling.
-- Improve the travel planning workflow.
-- Connect database and itinerary functionality to the UI.
-- Improve API key and secret management.
-
-**Milestone:** Working travel planning assistant with itinerary generation.
-
-### Week 7 to 8: Finalization and Deployment
-
-**Goal:** Improve the application and prepare the final version.
-
-- Improve the Streamlit interface.
-- Add input validation.
-- Improve error handling.
-- Add saving and export functionality if feasible.
-- Perform end-to-end testing.
-- Improve documentation.
-- Deploy the final application.
-- Prepare the final demonstration and presentation.
-
-**Milestone:** Complete deployed AI Travel Concierge.
-
-## Repository Structure
+## 📁 Project Structure
 
 ```text
 AI-Travel-Concierge/
-├── app.py
-├── agent/
-├── database/
-├── tools/
-├── utils/
+├── backend/
+│   └── app/
+│       ├── agent/
+│       ├── api/
+│       ├── database/
+│       ├── monitoring/
+│       ├── tools/
+│       └── main.py
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   └── package.json
 ├── tests/
+│   ├── test_api_contracts.py
+│   ├── test_persistence.py
+│   ├── test_resilience.py
+│   └── test_tools.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── pytest.ini
 ├── .env.example
 ├── .gitignore
-├── requirements.txt
 └── README.md
 ```
 
-The repository structure will be updated as development progresses.
+## ⚙️ Local Setup
 
-## Security
+### 1. Clone
 
-API keys and other sensitive information will not be committed to the
-repository.
+```bash
+git clone https://github.com/VaishnavRameshMenon/AI-Travel-Concierge.git
+cd AI-Travel-Concierge
+```
 
-Environment variables and appropriate secret management methods will be used
-for local development and deployment.
+### 2. Python environment
 
-## Current Status
+Windows:
 
-**Week 1: Planning and Initial Setup**
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-The team has finalized the AI Travel Concierge topic and discussed the
-project objectives, proposed features, architecture, technology stack and
-division of responsibilities.
+Linux/macOS:
 
-The GitHub repository and project board have been created. Development and API
-research will begin in the next phase.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-## Submission Plan
+### 3. Install backend dependencies
 
-The project will be developed and submitted progressively throughout the
-8-week project period.
+```bash
+pip install -r requirements.txt
+```
 
-Weekly progress, source code and relevant documentation will be maintained in
-this repository.
+### 4. Configure environment variables
 
-## Team
+Create `.env` from `.env.example`.
 
-**Team AGENTIC FOUR**
+Never commit `.env` or real API keys.
 
-1. Vaishnav R Menon
-2. Jyoshita NH
-3. Ninad Gowda
-4. Parinitha Srinivas
+## ▶️ Run Backend
+
+```bash
+uvicorn backend.app.main:app --reload
+```
+
+Backend:
+
+```text
+http://127.0.0.1:8000
+```
+
+FastAPI docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## ▶️ Run Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend:
+
+```text
+http://localhost:3000
+```
+
+Configure the backend URL using `frontend/.env.example`.
+
+## 🐳 Docker
+
+```bash
+docker compose up --build
+```
+
+## 🧪 Testing
+
+Run:
+
+```bash
+pytest -q
+```
+
+The test suite covers API contracts, database persistence, tool behavior, resilience/fallback behavior, and agent workflow behavior.
+
+## 💾 Persistent Trip History
+
+Generated trips can be stored in PostgreSQL, including:
+
+- User query
+- Origin and destination
+- Dates and duration
+- Travelers and budget
+- Interests
+- Generated itinerary
+- Estimated cost
+- Weather, flight, hotel, and attraction research
+
+## 🔄 Itinerary Refinement
+
+Previously generated trips can be refined with instructions such as:
+
+```text
+Make the trip more budget friendly.
+```
+
+or:
+
+```text
+Add more traditional Japanese cultural experiences.
+```
+
+## 🛡️ Reliability & Error Handling
+
+The application handles API failures, missing data, weather limitations, attraction-provider unavailability, LLM quota exhaustion, and invalid input using controlled fallbacks and warnings.
+
+The LLM layer supports fallback model handling when the primary model cannot be used.
+
+## 📊 Monitoring
+
+TripPilot includes custom monitoring components for:
+
+- Request logging
+- API request timing
+- Application metrics
+- Error tracking
+- Backend health information
+
+## 🔐 Security
+
+Security measures include:
+
+- Environment-variable based secret management
+- No API keys hardcoded in source
+- `.env` excluded from version control
+- Pydantic request validation
+- Controlled CORS
+- SQLAlchemy database access
+- External API failure handling
+- Separate frontend/backend configuration
+
+See `docs/security.md` for the detailed security assessment.
+
+## 📚 Documentation
+
+Additional documentation:
+
+```text
+docs/
+├── architecture.md
+├── api.md
+├── security.md
+└── performance.md
+```
+
+## 📈 Track B Features
+
+TripPilot implements the advanced Track B direction through:
+
+- LangGraph workflow
+- Multi-step agent reasoning
+- State management
+- Conditional routing
+- Constraint validation
+- Automatic replanning
+- Multiple travel integrations
+- PostgreSQL persistence
+- FastAPI backend
+- Next.js frontend
+- Docker configuration
+- Monitoring and logging
+- Automated testing
+- Security practices
+- API documentation
+
+## 🚧 Known Limitations
+
+Travel information depends on third-party providers.
+
+- Flight and hotel prices can change rapidly.
+- Weather forecasts have limited future availability.
+- Some attraction information may use fallback data.
+- LLM availability can depend on provider quotas and rate limits.
+
+The system therefore presents researched information with appropriate warnings rather than treating generated information as guaranteed bookings.
+
+## 🔮 Future Improvements
+
+- Redis caching
+- More travel providers
+- Real booking integrations
+- Voice-based travel planning
+- Multilingual support
+- Advanced observability dashboards
+- User authentication
+- Collaborative trip planning
+- Calendar integration
+- More sophisticated cost optimization
+- Distributed production deployment
+
+## 👨‍💻 Project
+
+**TripPilot — AI Travel Concierge**
+
+Built as an Advanced Track B AI Agent project.
+
+GitHub: https://github.com/VaishnavRameshMenon/AI-Travel-Concierge
